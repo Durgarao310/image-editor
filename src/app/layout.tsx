@@ -50,10 +50,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.jpg", // We should probably create this or at least define it
+        url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "Fast Image Editor Preview",
+        alt: "Fast Image Editor - Convert, Resize & Optimize Images",
       },
     ],
   },
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     description:
       "Fast, secure, and free online image tools. Edit images directly in your browser.",
     creator: "@fastimageeditor",
-    images: ["/og-image.jpg"],
+    images: ["/logo.png"],
   },
   robots: {
     index: true,
@@ -77,11 +77,17 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
+    other: [
+      { rel: "icon", url: "/favicon.ico" },
+    ],
   },
-  manifest: "/manifest.webmanifest",
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
