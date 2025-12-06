@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://fast-image-editor.com"),
+  metadataBase: new URL("https://fast-image-editor.durga.dev"),
   alternates: {
     canonical: "/",
   },
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     title: "Fast Image Editor | Convert, Resize & Optimize Images",
     description:
       "Professional grade image editing tools in your browser. Convert formats, resize dimensions, and optimize file size without uploading to a server.",
-    url: "https://fast-image-editor.com",
+    url: "https://fast-image-editor.durga.dev",
     siteName: "Fast Image Editor",
     locale: "en_US",
     type: "website",

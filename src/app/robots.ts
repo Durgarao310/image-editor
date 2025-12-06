@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: '/api/',
         },
-        sitemap: 'https://fast-image-editor.com/sitemap.xml',
+        sitemap: 'https://fast-image-editor.durga.dev/sitemap.xml',
     };
 }
