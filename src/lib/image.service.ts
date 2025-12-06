@@ -148,13 +148,20 @@ export class ImageService {
 
       // Apply resize
       if (options.width || options.height) {
-        pipeline = pipeline.resize({
+        const resizeOptions: sharp.ResizeOptions = {
           width: options.width,
           height: options.height,
-          fit: options.fit || 'cover',
+          fit: (options.fit || 'cover') as keyof sharp.FitEnum,
           position: options.position || 'center',
           background: options.background || { r: 255, g: 255, b: 255, alpha: 1 },
+        };
+        
+        logger.info('Applying resize with options', {
+          width: resizeOptions.width,
+          height: resizeOptions.height,
+          fit: resizeOptions.fit,
         });
+        pipeline = pipeline.resize(resizeOptions);
       }
 
       // Apply rotation

@@ -28,8 +28,9 @@ export function useImageProcessor() {
   const [file, setFile] = useState<File | null>(null);
   const [operation, setOperation] = useState<Operation>("convert");
   const [processing, setProcessing] = useState(false);
-  const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [livePreview, setLivePreview] = useState<string | null>(null);
+  const [autoPreview, setAutoPreview] = useState(true);
 
   // Processing options
   const [options, setOptions] = useState<ProcessingOptions>({
@@ -42,19 +43,19 @@ export function useImageProcessor() {
     preset: "medium",
   });
 
-  // Clean up object URLs when result changes or component unmounts
+  // Clean up object URLs when component unmounts
   useEffect(() => {
     return () => {
-      if (result?.url) {
-        URL.revokeObjectURL(result.url);
+      if (livePreview) {
+        URL.revokeObjectURL(livePreview);
       }
     };
-  }, [result]);
+  }, [livePreview]);
 
   const handleFileSelect = useCallback((selectedFile: File) => {
     setFile(selectedFile);
-    setResult(null);
     setError(null);
+    setLivePreview(null);
 
     // Load image to get dimensions
     const reader = new FileReader();
@@ -96,6 +97,7 @@ export function useImageProcessor() {
         if (options.width) formData.append("width", options.width.toString());
         if (options.height) formData.append("height", options.height.toString());
         formData.append("fit", options.fit);
+        formData.append("format", options.format);
         formData.append("quality", options.quality.toString());
         formData.append("optimizeForWeb", "true");
         break;
@@ -136,12 +138,6 @@ export function useImageProcessor() {
 
     setProcessing(true);
     setError(null);
-    
-    // Clean up previous result URL
-    if (result?.url) {
-      URL.revokeObjectURL(result.url);
-    }
-    setResult(null);
 
     try {
       const endpoint = getEndpoint();
@@ -160,51 +156,89 @@ export function useImageProcessor() {
         alert(JSON.stringify(metadata.data, null, 2));
       } else {
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
         const filename =
           response.headers
             .get("content-disposition")
             ?.split("filename=")[1]
             ?.replace(/"/g, "") || "processed-image";
 
-        setResult({ url, filename });
+        // Trigger download immediately
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Clean up blob URL
+        URL.revokeObjectURL(url);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Processing failed");
     } finally {
       setProcessing(false);
     }
-  }, [buildFormData, getEndpoint, operation, result]);
+  }, [buildFormData, getEndpoint, operation]);
 
-  const handleDownload = useCallback(() => {
-    if (!result) return;
+  const toggleAutoPreview = useCallback(() => {
+    setAutoPreview((prev) => !prev);
+  }, []);
 
-    const a = document.createElement("a");
-    a.href = result.url;
-    a.download = result.filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }, [result]);
+  const generateLivePreview = useCallback(async () => {
+    if (!file || operation === "metadata") return;
 
-  const cleanupResult = useCallback(() => {
-    if (result?.url) {
-      URL.revokeObjectURL(result.url);
+    const formData = buildFormData();
+    if (!formData) return;
+
+    try {
+      const endpoint = getEndpoint();
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        
+        // Clean up old preview
+        setLivePreview((prev) => {
+          if (prev) {
+            URL.revokeObjectURL(prev);
+          }
+          return URL.createObjectURL(blob);
+        });
+      }
+    } catch (err) {
+      // Silent fail for preview - don't show error to user
+      console.debug("Preview generation failed:", err);
     }
-  }, [result]);
+  }, [file, operation, buildFormData, getEndpoint]);
+
+  // Auto-generate live preview when options change
+  useEffect(() => {
+    if (!file || !autoPreview || operation === "metadata") return;
+
+    const debounceTimer = setTimeout(() => {
+      generateLivePreview();
+    }, 500); // Debounce to avoid too many requests
+
+    return () => clearTimeout(debounceTimer);
+  }, [file, options, operation, autoPreview, generateLivePreview]);
 
   return {
     file,
     operation,
     processing,
-    result,
     error,
     options,
+    livePreview,
+    autoPreview,
     setOperation,
     handleFileSelect,
     updateOption,
     handleProcess,
-    handleDownload,
-    cleanupResult,
+    toggleAutoPreview,
+    generateLivePreview,
   };
 }

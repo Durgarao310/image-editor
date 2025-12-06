@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Parse options
     const width = formData.get('width');
     const height = formData.get('height');
-    const fit = formData.get('fit') as ResizeImageRequest['fit'];
+    const fit = (formData.get('fit') as ResizeImageRequest['fit']) || 'cover';
     const position = formData.get('position') as ResizeImageRequest['position'];
     const rotate = formData.get('rotate');
     const flipHorizontal = formData.get('flipHorizontal') === 'true';
@@ -51,6 +51,13 @@ export async function POST(request: NextRequest) {
     // Validate dimensions
     const widthNum = width ? parseInt(width as string, 10) : undefined;
     const heightNum = height ? parseInt(height as string, 10) : undefined;
+
+    if (!widthNum && !heightNum) {
+      return NextResponse.json(
+        createErrorResponse('At least width or height must be provided'),
+        { status: 400 }
+      );
+    }
 
     if (widthNum || heightNum) {
       validateDimensions(widthNum, heightNum);
@@ -66,13 +73,14 @@ export async function POST(request: NextRequest) {
       width: widthNum,
       height: heightNum,
       fit,
+      fitType: typeof fit,
     });
 
     // Build resize options
     const options: ResizeImageRequest = {
       width: widthNum,
       height: heightNum,
-      fit: fit || 'cover',
+      fit: fit,
       position: position || 'center',
       rotate: rotate ? parseInt(rotate as string, 10) : undefined,
       flipHorizontal,
