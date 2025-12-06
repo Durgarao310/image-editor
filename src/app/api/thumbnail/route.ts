@@ -15,6 +15,7 @@ import {
   createErrorResponse,
 } from '@/utils/image.utils';
 import { logger } from '@/utils/logger';
+import { validateImageFile } from '@/utils/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -26,7 +27,6 @@ export async function POST(request: NextRequest) {
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const preset = formData.get('preset') as string;
     
     if (!file) {
       return NextResponse.json(
@@ -34,6 +34,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate file type and size
+    try {
+      validateImageFile(file);
+    } catch (error) {
+      return NextResponse.json(
+        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
+        { status: 400 }
+      );
+    }
+
+    const preset = formData.get('preset') as string;
 
     if (!preset || !THUMBNAIL_PRESETS[preset as keyof typeof THUMBNAIL_PRESETS]) {
       return NextResponse.json(

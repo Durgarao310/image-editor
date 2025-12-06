@@ -13,9 +13,9 @@ import {
   generateUniqueFilename,
   parseFilename,
   createErrorResponse,
-  validateDimensions,
 } from '@/utils/image.utils';
 import { logger } from '@/utils/logger';
+import { validateImageFile, validateDimensions, validateQuality } from '@/utils/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -31,6 +31,16 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         createErrorResponse('No file provided'),
+        { status: 400 }
+      );
+    }
+
+    // Validate file type and size
+    try {
+      validateImageFile(file);
+    } catch (error) {
+      return NextResponse.json(
+        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
         { status: 400 }
       );
     }
@@ -59,8 +69,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (widthNum || heightNum) {
+    // Validate dimensions and quality
+    try {
       validateDimensions(widthNum, heightNum);
+      if (quality) {
+        validateQuality(parseInt(quality as string, 10));
+      }
+    } catch (error) {
+      return NextResponse.json(
+        createErrorResponse(error instanceof Error ? error.message : 'Invalid parameters'),
+        { status: 400 }
+      );
     }
 
     // Convert file to buffer

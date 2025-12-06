@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { validateCustomFilename } from "@/utils/validation";
 
 type Operation = "convert" | "resize" | "optimize" | "metadata" | "thumbnail";
 
@@ -160,7 +161,10 @@ export function useImageProcessor() {
             ?.replace(/"/g, "") || "processed-image";
 
         // Use custom filename if provided, otherwise use default
-        const finalFilename = customFilename.trim() || defaultFilename;
+        // Sanitize custom filename to prevent path traversal attacks
+        const finalFilename = customFilename.trim() 
+          ? validateCustomFilename(customFilename)
+          : defaultFilename;
 
         // Trigger download immediately
         const url = URL.createObjectURL(blob);
@@ -179,7 +183,7 @@ export function useImageProcessor() {
     } finally {
       setProcessing(false);
     }
-  }, [buildFormData, getEndpoint, operation]);
+  }, [buildFormData, getEndpoint, operation, customFilename]);
 
   const toggleAutoPreview = useCallback(() => {
     setAutoPreview((prev) => !prev);

@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { imageService } from '@/lib/image.service';
-import type { UpdateMetadataRequest, ExtractMetadataRequest, ConvertImageRequest } from '@/types/image.types';
+import type { UpdateMetadataRequest, ExtractMetadataRequest } from '@/types/image.types';
 import {
   getMimeType,
   generateUniqueFilename,
@@ -16,6 +16,7 @@ import {
   createSuccessResponse,
 } from '@/utils/image.utils';
 import { logger } from '@/utils/logger';
+import { validateImageFile } from '@/utils/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -32,6 +33,16 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         createErrorResponse('No file provided'),
+        { status: 400 }
+      );
+    }
+
+    // Validate file type and size
+    try {
+      validateImageFile(file);
+    } catch (error) {
+      return NextResponse.json(
+        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
         { status: 400 }
       );
     }

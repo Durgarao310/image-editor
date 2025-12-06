@@ -15,6 +15,7 @@ import {
   createErrorResponse,
 } from '@/utils/image.utils';
 import { logger } from '@/utils/logger';
+import { validateImageFile, validateQuality } from '@/utils/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -34,6 +35,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate file type and size
+    try {
+      validateImageFile(file);
+    } catch (error) {
+      return NextResponse.json(
+        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
+        { status: 400 }
+      );
+    }
+
     // Parse options
     const format = formData.get('format') as string;
     const quality = formData.get('quality');
@@ -45,6 +56,18 @@ export async function POST(request: NextRequest) {
         createErrorResponse('Output format is required'),
         { status: 400 }
       );
+    }
+
+    // Validate quality if provided
+    if (quality) {
+      try {
+        validateQuality(parseInt(quality as string, 10));
+      } catch (error) {
+        return NextResponse.json(
+          createErrorResponse(error instanceof Error ? error.message : 'Invalid quality'),
+          { status: 400 }
+        );
+      }
     }
 
     // Convert file to buffer
