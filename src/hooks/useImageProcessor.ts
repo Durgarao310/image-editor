@@ -19,10 +19,6 @@ interface ProcessingOptions {
   preset: string;
 }
 
-interface ProcessingResult {
-  url: string;
-  filename: string;
-}
 
 export function useImageProcessor() {
   const [file, setFile] = useState<File | null>(null);
@@ -31,6 +27,7 @@ export function useImageProcessor() {
   const [error, setError] = useState<string | null>(null);
   const [livePreview, setLivePreview] = useState<string | null>(null);
   const [autoPreview, setAutoPreview] = useState(true);
+  const [customFilename, setCustomFilename] = useState<string>("");
 
   // Processing options
   const [options, setOptions] = useState<ProcessingOptions>({
@@ -156,17 +153,20 @@ export function useImageProcessor() {
         alert(JSON.stringify(metadata.data, null, 2));
       } else {
         const blob = await response.blob();
-        const filename =
+        const defaultFilename =
           response.headers
             .get("content-disposition")
             ?.split("filename=")[1]
             ?.replace(/"/g, "") || "processed-image";
 
+        // Use custom filename if provided, otherwise use default
+        const finalFilename = customFilename.trim() || defaultFilename;
+
         // Trigger download immediately
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = filename;
+        a.download = finalFilename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -234,11 +234,13 @@ export function useImageProcessor() {
     options,
     livePreview,
     autoPreview,
+    customFilename,
     setOperation,
     handleFileSelect,
     updateOption,
     handleProcess,
     toggleAutoPreview,
     generateLivePreview,
+    setCustomFilename,
   };
 }

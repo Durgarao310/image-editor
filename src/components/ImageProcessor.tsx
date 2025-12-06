@@ -25,11 +25,13 @@ export default function ImageProcessor() {
     options,
     livePreview,
     autoPreview,
+    customFilename,
     setOperation,
     handleFileSelect,
     updateOption,
     handleProcess,
     toggleAutoPreview,
+    setCustomFilename,
   } = useImageProcessor();
 
   return (
@@ -116,6 +118,24 @@ export default function ImageProcessor() {
               <p className="text-sm text-gray-600">
                 Extracts EXIF, IPTC, and other metadata from the image.
               </p>
+            )}
+            {/* Custom Filename Input */}
+            {operation !== "metadata" && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Custom Filename (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={customFilename}
+                  onChange={(e) => setCustomFilename(e.target.value)}
+                  placeholder="Leave empty for auto-generated name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500">
+                  💡 File extension will be added automatically based on format
+                </p>
+              </div>
             )}
             <button
               onClick={handleProcess}
