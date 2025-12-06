@@ -38,9 +38,9 @@ export default function ImageProcessor() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-3">
-          <img 
-            src="/logo.png" 
-            alt="Fast Image Editor Logo" 
+          <img
+            src="/logo.png"
+            alt="Fast Image Editor Logo"
             className="w-12 h-12 object-contain"
           />
           <h1 className="text-3xl font-bold text-gray-900">
