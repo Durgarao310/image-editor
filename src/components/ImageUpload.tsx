@@ -3,9 +3,16 @@
 /**
  * Image Upload Component
  * Drag-and-drop file upload with preview
+ * Includes memory leak fixes for FileReader and preview URLs
  */
 
-import { useState, useCallback, DragEvent, ChangeEvent } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  DragEvent,
+  ChangeEvent,
+} from "react";
 
 interface ImageUploadProps {
   onFileSelect: (file: File) => void;
@@ -30,6 +37,15 @@ export default function ImageUpload({
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Clean up preview URL when component unmounts or preview changes
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
   const validateFile = (file: File): boolean => {
     setError(null);
 
@@ -47,18 +63,26 @@ export default function ImageUpload({
     return true;
   };
 
-  const handleFile = (file: File) => {
-    if (validateFile(file)) {
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleFile = useCallback(
+    (file: File) => {
+      if (validateFile(file)) {
+        // Clean up previous preview if it exists
+        if (preview && preview.startsWith("blob:")) {
+          URL.revokeObjectURL(preview);
+        }
 
-      onFileSelect(file);
-    }
-  };
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+
+        onFileSelect(file);
+      }
+    },
+    [preview, onFileSelect]
+  );
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
