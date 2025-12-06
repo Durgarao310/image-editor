@@ -40,7 +40,7 @@ export function validateImageBuffer(buffer: Buffer): void {
   ];
 
   const isValid = validSignatures.some((sig) => signature.startsWith(sig));
-  
+
   if (!isValid && !buffer.toString('utf8', 0, 5).includes('<?xml')) {
     throw new Error('Invalid or unsupported image format');
   }
@@ -160,11 +160,12 @@ export function sanitizeFilename(filename: string): string {
  */
 export function generateUniqueFilename(originalName: string, format: SupportedOutputFormat): string {
   const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 1000);
   const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
   const sanitized = sanitizeFilename(nameWithoutExt);
   const extension = getFileExtension(format);
-  
-  return `${sanitized}_${timestamp}.${extension}`;
+
+  return `${sanitized}_${timestamp}_${random}.${extension}`;
 }
 
 /**
@@ -175,7 +176,7 @@ export function generateUniqueFilename(originalName: string, format: SupportedOu
  */
 export function parseFilename(filename: string | undefined): string {
   if (!filename) return 'image';
-  
+
   // Remove path and sanitize
   const name = filename.split(/[/\\]/).pop() || 'image';
   return sanitizeFilename(name);
@@ -191,7 +192,7 @@ export function parseFilename(filename: string | undefined): string {
 export function calculateAspectRatio(width: number, height: number): string {
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
   const divisor = gcd(width, height);
-  
+
   return `${width / divisor}:${height / divisor}`;
 }
 
@@ -280,7 +281,7 @@ export function detectFormat(buffer: Buffer): SupportedInputFormat | null {
   if (signature.startsWith('52494646') && buffer.toString('utf8', 8, 12) === 'WEBP') return 'webp';
   if (signature.startsWith('424d')) return 'bmp';
   if (signature.startsWith('49492a00') || signature.startsWith('4d4d002a')) return 'tiff';
-  
+
   // Check for SVG
   const start = buffer.toString('utf8', 0, 100);
   if (start.includes('<?xml') || start.includes('<svg')) return 'svg';

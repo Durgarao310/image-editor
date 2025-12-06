@@ -13,12 +13,12 @@ describe('ImageService', () => {
 
   beforeAll(async () => {
     imageService = new ImageService();
-    
-    // Create a test image buffer (100x100 red square)
+
+    // Create a test image buffer (500x500 red square)
     testImageBuffer = await sharp({
       create: {
-        width: 100,
-        height: 100,
+        width: 500,
+        height: 500,
         channels: 3,
         background: { r: 255, g: 0, b: 0 },
       },
@@ -125,9 +125,9 @@ describe('ImageService', () => {
 
       const result = await imageService.resizeImage(testImageBuffer, options);
 
-      // After 90-degree rotation of 100x100, dimensions should remain 100x100
-      expect(result.metadata.width).toBe(100);
-      expect(result.metadata.height).toBe(100);
+      // After 90-degree rotation of 500x500, dimensions should remain 500x500
+      expect(result.metadata.width).toBe(500);
+      expect(result.metadata.height).toBe(500);
     });
 
     it('should flip image horizontally', async () => {
@@ -138,7 +138,7 @@ describe('ImageService', () => {
       const result = await imageService.resizeImage(testImageBuffer, options);
 
       expect(result.buffer).toBeInstanceOf(Buffer);
-      expect(result.metadata.width).toBe(100);
+      expect(result.metadata.width).toBe(500);
     });
 
     it('should flip image vertically', async () => {
@@ -149,7 +149,7 @@ describe('ImageService', () => {
       const result = await imageService.resizeImage(testImageBuffer, options);
 
       expect(result.buffer).toBeInstanceOf(Buffer);
-      expect(result.metadata.height).toBe(100);
+      expect(result.metadata.height).toBe(500);
     });
 
     it('should apply multiple transformations', async () => {
@@ -174,8 +174,8 @@ describe('ImageService', () => {
         includeExif: true,
       });
 
-      expect(metadata.width).toBe(100);
-      expect(metadata.height).toBe(100);
+      expect(metadata.width).toBe(500);
+      expect(metadata.height).toBe(500);
       expect(metadata.format).toBe('png');
       expect(metadata.channels).toBeGreaterThan(0);
     });
@@ -185,7 +185,7 @@ describe('ImageService', () => {
         includeExif: false,
       });
 
-      expect(metadata.width).toBe(100);
+      expect(metadata.width).toBe(500);
       expect(metadata.exif).toBeUndefined();
     });
 
@@ -256,6 +256,46 @@ describe('ImageService', () => {
 
       // Allow some tolerance
       expect(result.size).toBeLessThanOrEqual(targetSize * 1.1);
+    });
+
+    it('should use binary search for optimization', async () => {
+      // Create a large noise image that is hard to compress
+      const width = 2000;
+      const height = 2000;
+      const channels = 3;
+      const size = width * height * channels;
+      const rawBuffer = Buffer.alloc(size);
+
+      // Fill with random noise
+      for (let i = 0; i < size; i++) {
+        rawBuffer[i] = Math.floor(Math.random() * 256);
+      }
+
+      const difficultImage = await sharp(rawBuffer, {
+        raw: {
+          width,
+          height,
+          channels
+        }
+      })
+        .jpeg()
+        .toBuffer();
+
+      const targetSize = Math.floor(difficultImage.length * 0.7); // Target 70% of original
+      const startTime = Date.now();
+
+      const result = await imageService.optimizeImage(difficultImage, {
+        maxFileSize: targetSize,
+        quality: 100,
+        format: 'jpg',
+      });
+
+      const duration = Date.now() - startTime;
+
+      // Should meet target size
+      expect(result.size).toBeLessThanOrEqual(targetSize);
+      // Binary search should be reasonably fast
+      expect(duration).toBeLessThan(10000); // 10s budget for large image processing
     });
 
     it('should handle lossless optimization', async () => {
@@ -380,7 +420,7 @@ describe('ImageService', () => {
   describe('Performance', () => {
     it('should process image within reasonable time', async () => {
       const startTime = Date.now();
-      
+
       await imageService.convertImage(testImageBuffer, {
         format: 'webp',
         quality: 80,
@@ -410,6 +450,51 @@ describe('ImageService', () => {
 
       expect(result.metadata.width).toBe(1000);
       expect(result.metadata.height).toBe(1000);
+    });
+  });
+
+  describe('Coverage Gaps', () => {
+    it('should return early if optimization target met immediately', async () => {
+      const largeTarget = testImageBuffer.length * 2;
+      // @ts-ignore - Accessing private method for testing
+      const result = await (imageService as any).optimizeToTargetSize(
+        testImageBuffer,
+        largeTarget,
+        'jpeg',
+        80
+      );
+      expect(result.data.length).toBeLessThanOrEqual(largeTarget);
+    });
+
+    it('should handle EXIF parsing errors gracefully', () => {
+      const garbage = Buffer.from('garbage data');
+      // @ts-ignore - Accessing private method for testing
+      const result = (imageService as any).parseExifData(garbage);
+      expect(result).toEqual({});
+    });
+
+    it('should handle IPTC parsing errors gracefully', () => {
+      const garbage = Buffer.from('garbage data');
+      // @ts-ignore - Accessing private method for testing
+      const result = (imageService as any).parseIptcData(garbage);
+      expect(result).toEqual({});
+    });
+
+    it('should add image watermark', async () => {
+      const watermarkBuffer = await sharp({
+        create: { width: 10, height: 10, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 1 } }
+      })
+        .png()
+        .toBuffer();
+
+      const result = await imageService.addWatermark(testImageBuffer, {
+        type: 'image',
+        imageBuffer: watermarkBuffer,
+        position: 'center',
+        opacity: 0.5
+      });
+      expect(result.buffer).toBeInstanceOf(Buffer);
+      expect(result.size).toBeGreaterThan(0);
     });
   });
 });
