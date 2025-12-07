@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
+import NextImage from "next/image";
 import { Eye, EyeOff, Image as ImageIcon, Ruler, Weight } from "lucide-react";
 
 interface ImagePreviewPanelProps {
@@ -56,17 +57,16 @@ export default function ImagePreviewPanel({
     reader.readAsDataURL(originalFile);
 
     return () => {
+      // Clean up the URL when component unmounts or originalFile changes
       if (originalUrl) {
         URL.revokeObjectURL(originalUrl);
       }
     };
-  }, [originalFile]);
+  }, [originalFile, originalUrl]);
 
   // Get preview image dimensions and size
   useEffect(() => {
     if (!previewUrl) {
-      setPreviewDimensions(null);
-      setPreviewSize(null);
       return;
     }
 
@@ -90,6 +90,7 @@ export default function ImagePreviewPanel({
       .catch(() => {
         setPreviewSize(null);
       });
+
   }, [previewUrl]);
 
   if (!originalUrl || !originalDimensions) {
@@ -150,10 +151,11 @@ export default function ImagePreviewPanel({
               <h3 className="text-sm font-medium text-gray-700">Original</h3>
             </div>
             <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
-              <img
+              <NextImage
+                fill
                 src={originalUrl}
                 alt="Original"
-                className="w-full h-full object-contain"
+                className="object-contain"
               />
             </div>
             {/* Original Image Info */}
@@ -198,20 +200,22 @@ export default function ImagePreviewPanel({
               <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-blue-200">
                 <div className="grid grid-cols-2 h-full">
                   <div className="relative border-r-2 border-blue-300">
-                    <img
+                    <NextImage
                       src={originalUrl}
                       alt="Original Half"
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                     <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                       Before
                     </div>
                   </div>
                   <div className="relative">
-                    <img
+                    <NextImage
                       src={previewUrl}
                       alt="Preview Half"
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                     <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                       After
@@ -236,10 +240,11 @@ export default function ImagePreviewPanel({
             </div>
             <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-green-200">
               {previewUrl ? (
-                <img
+                <NextImage
+                  fill
                   src={previewUrl}
                   alt="Preview"
-                  className="w-full h-full object-contain"
+                  className="object-contain"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -289,27 +294,24 @@ export default function ImagePreviewPanel({
                     const compression = getCompressionRatio();
                     return (
                       <div
-                        className={`flex items-center justify-between pt-2 border-t ${
-                          compression.saved
-                            ? "border-green-200"
-                            : "border-orange-200"
-                        }`}
+                        className={`flex items-center justify-between pt-2 border-t ${compression.saved
+                          ? "border-green-200"
+                          : "border-orange-200"
+                          }`}
                       >
                         <span
-                          className={`font-medium ${
-                            compression.saved
-                              ? "text-green-700"
-                              : "text-orange-700"
-                          }`}
+                          className={`font-medium ${compression.saved
+                            ? "text-green-700"
+                            : "text-orange-700"
+                            }`}
                         >
                           {compression.saved ? "Compressed" : "Size Change"}
                         </span>
                         <span
-                          className={`font-bold ${
-                            compression.saved
-                              ? "text-green-600"
-                              : "text-orange-600"
-                          }`}
+                          className={`font-bold ${compression.saved
+                            ? "text-green-600"
+                            : "text-orange-600"
+                            }`}
                         >
                           {compression.ratio}{" "}
                           {compression.saved ? "saved" : "larger"}
@@ -318,81 +320,6 @@ export default function ImagePreviewPanel({
                     );
                   })()}
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced Quick Stats */}
-      {showPreview && (
-        <div className="border-t pt-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Original Size</p>
-              <p className="text-lg font-bold text-gray-900">
-                {formatFileSize(originalDimensions.size)}
-              </p>
-              <p className="text-xs text-gray-500">
-                {originalDimensions.width} × {originalDimensions.height}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Format</p>
-              <p className="text-lg font-bold text-gray-900">
-                {originalDimensions.format}
-              </p>
-              <p className="text-xs text-gray-500">Input</p>
-            </div>
-            {previewUrl && previewSize && previewDimensions && (
-              <>
-                <div className="bg-green-50 rounded-lg p-3">
-                  <p className="text-xs text-green-600 mb-1">New Size</p>
-                  <p className="text-lg font-bold text-green-700">
-                    {formatFileSize(previewSize)}
-                  </p>
-                  <p className="text-xs text-green-600">
-                    {previewDimensions.width} × {previewDimensions.height}
-                  </p>
-                </div>
-                <div
-                  className={`rounded-lg p-3 ${
-                    previewSize < originalDimensions.size
-                      ? "bg-green-50"
-                      : "bg-orange-50"
-                  }`}
-                >
-                  <p
-                    className={`text-xs mb-1 ${
-                      previewSize < originalDimensions.size
-                        ? "text-green-600"
-                        : "text-orange-600"
-                    }`}
-                  >
-                    Compression
-                  </p>
-                  <p
-                    className={`text-lg font-bold ${
-                      previewSize < originalDimensions.size
-                        ? "text-green-700"
-                        : "text-orange-700"
-                    }`}
-                  >
-                    {getCompressionRatio().ratio}
-                  </p>
-                  <p
-                    className={`text-xs ${
-                      previewSize < originalDimensions.size
-                        ? "text-green-600"
-                        : "text-orange-600"
-                    }`}
-                  >
-                    {previewSize < originalDimensions.size
-                      ? "Saved"
-                      : "Increased"}
-                  </p>
-                </div>
-              </>
             )}
           </div>
         </div>

@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { imageService } from '@/lib/image.service';
-import type { ResizeImageRequest } from '@/types/image.types';
+import type { ResizeImageRequest, SupportedOutputFormat } from '@/types/image.types';
 import {
   getMimeType,
   generateUniqueFilename,
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
       return NextResponse.json(
         createErrorResponse('No file provided'),
@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
     try {
       validateImageFile(file);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return NextResponse.json(
-        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
+        createErrorResponse('Image resize failed', errorMessage),
         { status: 400 }
       );
     }
@@ -114,10 +115,9 @@ export async function POST(request: NextRequest) {
     const result = await imageService.resizeImage(buffer, options);
 
     // Generate filename
-    const outputFormat = (format || result.format) as string;
     const filename = generateUniqueFilename(
-      parseFilename(file.name), 
-      outputFormat as any
+      parseFilename(file.name),
+      result.format as SupportedOutputFormat
     );
 
     logger.info('Image resize completed', {
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     // Return processed image
     return new NextResponse(new Uint8Array(result.buffer), {
       headers: {
-        'Content-Type': getMimeType(outputFormat as any),
+        'Content-Type': getMimeType(result.format as SupportedOutputFormat),
         'Content-Disposition': `attachment; filename="${filename}"`,
         'X-Processing-Time': `${result.processingTime}ms`,
         'X-Output-Size': `${result.size}`,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         'X-Output-Height': `${result.metadata.height}`,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Image resize failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });

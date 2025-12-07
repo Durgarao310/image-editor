@@ -6,17 +6,16 @@
  */
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 interface ProcessingResultProps {
   url: string;
-  filename: string;
   onDownload: () => void;
   onCleanup?: () => void;
 }
 
 export default function ProcessingResult({
   url,
-  filename,
   onDownload,
   onCleanup,
 }: ProcessingResultProps) {
@@ -35,10 +34,13 @@ export default function ProcessingResult({
         <p className="text-sm text-green-600 font-semibold">
           ✓ Processing complete!
         </p>
-        <img
+        <Image
           src={url}
           alt="Processed"
-          className="max-h-96 mx-auto rounded-lg shadow-lg"
+          width={400}
+          height={300}
+          className="max-h-96 w-auto mx-auto rounded-lg shadow-lg"
+          unoptimized
         />
         <button
           onClick={onDownload}
@@ -52,10 +54,13 @@ export default function ProcessingResult({
         <h2 className="text-xl font-semibold mb-4 text-gray-900">
           Result Preview
         </h2>
-        <img
+        <Image
           src={url}
           alt="Processed"
-          className="max-w-full mx-auto rounded-lg shadow-lg"
+          width={800}
+          height={600}
+          className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
+          unoptimized
         />
       </div>
     </div>

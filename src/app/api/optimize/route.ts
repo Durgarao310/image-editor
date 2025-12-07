@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { imageService } from '@/lib/image.service';
-import type { OptimizeImageRequest } from '@/types/image.types';
+import type { OptimizeImageRequest, SupportedOutputFormat } from '@/types/image.types';
 import {
   getMimeType,
   generateUniqueFilename,
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
       return NextResponse.json(
         createErrorResponse('No file provided'),
@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
     try {
       validateImageFile(file);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return NextResponse.json(
-        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
+        createErrorResponse('Image optimization failed', errorMessage),
         { status: 400 }
       );
     }
@@ -92,8 +93,8 @@ export async function POST(request: NextRequest) {
     // Generate filename
     const outputFormat = (format || result.format) as string;
     const filename = generateUniqueFilename(
-      parseFilename(file.name), 
-      outputFormat as any
+      parseFilename(file.name),
+      outputFormat as SupportedOutputFormat
     );
 
     const compressionRatio = ((1 - result.size / buffer.length) * 100).toFixed(2);
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Return processed image
     return new NextResponse(new Uint8Array(result.buffer), {
       headers: {
-        'Content-Type': getMimeType(outputFormat as any),
+        'Content-Type': getMimeType(outputFormat as SupportedOutputFormat),
         'Content-Disposition': `attachment; filename="${filename}"`,
         'X-Processing-Time': `${result.processingTime}ms`,
         'X-Input-Size': `${buffer.length}`,
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
         'X-Output-Format': result.format,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Image optimization failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });

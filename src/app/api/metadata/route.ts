@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { imageService } from '@/lib/image.service';
-import type { UpdateMetadataRequest, ExtractMetadataRequest } from '@/types/image.types';
+import type { UpdateMetadataRequest, ExtractMetadataRequest, SupportedOutputFormat } from '@/types/image.types';
 import {
   getMimeType,
   generateUniqueFilename,
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const operation = formData.get('operation') as string; // 'extract' or 'update'
-    
+
     if (!file) {
       return NextResponse.json(
         createErrorResponse('No file provided'),
@@ -40,9 +40,10 @@ export async function POST(request: NextRequest) {
     // Validate file type and size
     try {
       validateImageFile(file);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return NextResponse.json(
-        createErrorResponse(error instanceof Error ? error.message : 'Invalid file'),
+        createErrorResponse('Metadata extraction failed', errorMessage),
         { status: 400 }
       );
     }
@@ -112,8 +113,8 @@ export async function POST(request: NextRequest) {
 
       // Generate filename
       const filename = generateUniqueFilename(
-        parseFilename(file.name), 
-        result.format as any
+        parseFilename(file.name),
+        result.format as SupportedOutputFormat
       );
 
       logger.info('Metadata update completed', {
@@ -124,13 +125,13 @@ export async function POST(request: NextRequest) {
       // Return processed image
       return new NextResponse(new Uint8Array(result.buffer), {
         headers: {
-          'Content-Type': getMimeType(result.format as any),
+          'Content-Type': getMimeType(result.format as SupportedOutputFormat),
           'Content-Disposition': `attachment; filename="${filename}"`,
           'X-Processing-Time': `${result.processingTime}ms`,
         },
       });
     }
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Metadata operation failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });

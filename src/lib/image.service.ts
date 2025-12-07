@@ -16,7 +16,7 @@
  * @version 1.0.0
  */
 
-import sharp, { Sharp, Metadata, FormatEnum } from 'sharp';
+import sharp, { Sharp, FormatEnum } from 'sharp';
 import exif from 'exif-reader';
 import {
   ConvertImageRequest,
@@ -31,10 +31,9 @@ import {
   ThumbnailPreset,
   THUMBNAIL_PRESETS,
   SupportedOutputFormat,
-  ServiceResponse,
 } from '@/types/image.types';
 import { config } from './config';
-import { validateImageBuffer, formatBytes, getMimeType } from '@/utils/image.utils';
+import { validateImageBuffer } from '@/utils/image.utils';
 import { logger } from '@/utils/logger';
 
 /**
@@ -257,6 +256,7 @@ export class ImageService {
       // Extract EXIF data
       if (options.includeExif !== false && metadata.exif) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           imageMetadata.exif = this.parseExifData(metadata.exif) as any;
         } catch (error) {
           logger.warn('Failed to parse EXIF data', { error });
@@ -265,7 +265,7 @@ export class ImageService {
 
       // Extract IPTC data
       if (options.includeIptc && metadata.iptc) {
-        imageMetadata.iptc = this.parseIptcData(metadata.iptc);
+        imageMetadata.iptc = this.parseIptcData();
       }
 
       // Extract XMP data
@@ -322,7 +322,7 @@ export class ImageService {
       const image = sharp(buffer);
       const currentMetadata = await image.metadata();
 
-      let exifData: Record<string, unknown> = {};
+      const exifData: Record<string, unknown> = {};
 
       if (!updates.stripExisting && currentMetadata.exif) {
         // Note: We cannot easily modify existing EXIF buffer without a builder library.
@@ -802,7 +802,7 @@ export class ImageService {
    * Parse IPTC data from buffer
    * @private
    */
-  private parseIptcData(iptcBuffer: Buffer): Record<string, string> {
+  private parseIptcData(): Record<string, string> {
     try {
       // Basic IPTC parsing
       return {};
