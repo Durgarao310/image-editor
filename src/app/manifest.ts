@@ -24,12 +24,14 @@ export default function manifest(): MetadataRoute.Manifest {
                 src: '/android-chrome-192x192.png',
                 sizes: '192x192',
                 type: 'image/png',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 purpose: 'any maskable' as any,
             },
             {
                 src: '/android-chrome-512x512.png',
                 sizes: '512x512',
                 type: 'image/png',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 purpose: 'any maskable' as any,
             },
             {

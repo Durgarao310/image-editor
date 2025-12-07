@@ -29,10 +29,11 @@ export const MAX_FILE_SIZE = 50 * 1024 * 1024;
  */
 export function validateImageFile(file: File): void {
   // Validate file type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!ALLOWED_IMAGE_TYPES.includes(file.type as any)) {
-    logger.warn('Invalid file type attempted', { 
-      type: file.type, 
-      name: file.name 
+    logger.warn('Invalid file type attempted', {
+      type: file.type,
+      name: file.name
     });
     throw new Error(
       `Invalid file type: ${file.type}. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}`
@@ -41,9 +42,9 @@ export function validateImageFile(file: File): void {
 
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
-    logger.warn('File too large attempted', { 
-      size: file.size, 
-      name: file.name 
+    logger.warn('File too large attempted', {
+      size: file.size,
+      name: file.name
     });
     throw new Error(
       `File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum size: 50MB`
@@ -86,12 +87,12 @@ export function sanitizeFilename(filename: string): string {
  */
 export function validateCustomFilename(filename: string): string {
   const sanitized = sanitizeFilename(filename);
-  
+
   // Check for reserved names (Windows)
-  const reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 
-                    'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 
-                    'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
-  
+  const reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4',
+    'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2',
+    'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+
   const nameWithoutExt = sanitized.split('.')[0].toUpperCase();
   if (reserved.includes(nameWithoutExt)) {
     return 'image';

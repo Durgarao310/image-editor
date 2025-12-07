@@ -456,7 +456,7 @@ describe('ImageService', () => {
   describe('Coverage Gaps', () => {
     it('should return early if optimization target met immediately', async () => {
       const largeTarget = testImageBuffer.length * 2;
-      // @ts-ignore - Accessing private method for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await (imageService as any).optimizeToTargetSize(
         testImageBuffer,
         largeTarget,
@@ -468,14 +468,14 @@ describe('ImageService', () => {
 
     it('should handle EXIF parsing errors gracefully', () => {
       const garbage = Buffer.from('garbage data');
-      // @ts-ignore - Accessing private method for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (imageService as any).parseExifData(garbage);
       expect(result).toEqual({});
     });
 
     it('should handle IPTC parsing errors gracefully', () => {
       const garbage = Buffer.from('garbage data');
-      // @ts-ignore - Accessing private method for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (imageService as any).parseIptcData(garbage);
       expect(result).toEqual({});
     });

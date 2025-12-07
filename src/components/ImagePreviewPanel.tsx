@@ -67,8 +67,6 @@ export default function ImagePreviewPanel({
   // Get preview image dimensions and size
   useEffect(() => {
     if (!previewUrl) {
-      setPreviewDimensions(null);
-      setPreviewSize(null);
       return;
     }
 
@@ -92,6 +90,7 @@ export default function ImagePreviewPanel({
       .catch(() => {
         setPreviewSize(null);
       });
+
   }, [previewUrl]);
 
   if (!originalUrl || !originalDimensions) {
@@ -295,27 +294,24 @@ export default function ImagePreviewPanel({
                     const compression = getCompressionRatio();
                     return (
                       <div
-                        className={`flex items-center justify-between pt-2 border-t ${
-                          compression.saved
-                            ? "border-green-200"
-                            : "border-orange-200"
-                        }`}
+                        className={`flex items-center justify-between pt-2 border-t ${compression.saved
+                          ? "border-green-200"
+                          : "border-orange-200"
+                          }`}
                       >
                         <span
-                          className={`font-medium ${
-                            compression.saved
-                              ? "text-green-700"
-                              : "text-orange-700"
-                          }`}
+                          className={`font-medium ${compression.saved
+                            ? "text-green-700"
+                            : "text-orange-700"
+                            }`}
                         >
                           {compression.saved ? "Compressed" : "Size Change"}
                         </span>
                         <span
-                          className={`font-bold ${
-                            compression.saved
-                              ? "text-green-600"
-                              : "text-orange-600"
-                          }`}
+                          className={`font-bold ${compression.saved
+                            ? "text-green-600"
+                            : "text-orange-600"
+                            }`}
                         >
                           {compression.ratio}{" "}
                           {compression.saved ? "saved" : "larger"}
